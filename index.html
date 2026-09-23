@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2F5BEA">
+<link rel="icon" href="icons/icon-192.png">
+<title>Atelier PDF & images</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --sunk:#E2E7EE; --ink:#1B2230; --muted:#5B6576;
+  --line:#CDD4DE; --accent:#2F5BEA; --accent-ink:#FFFFFF; --gain:#1E8F5A; --warn:#B4541A;
+  --bar-before:#B9C3D1;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131821; --surface:#1C2330; --sunk:#252E3D; --ink:#E7EBF1; --muted:#9AA5B6;
+    --line:#333E50; --accent:#7D9BFF; --accent-ink:#0E1422; --gain:#5CCB94; --warn:#F0A064;
+    --bar-before:#46526A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131821; --surface:#1C2330; --sunk:#252E3D; --ink:#E7EBF1; --muted:#9AA5B6;
+  --line:#333E50; --accent:#7D9BFF; --accent-ink:#0E1422; --gain:#5CCB94; --warn:#F0A064;
+  --bar-before:#46526A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.5;
+}
+.wrap{max-width:760px; margin:0 auto; padding:clamp(20px,5vw,48px) clamp(16px,4vw,28px) 64px}
+h1{
+  font-family:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  font-weight:800; font-size:clamp(2rem,6vw,3.1rem); line-height:1.02; letter-spacing:-.02em;
+  margin:0 0 .4em;
+}
+.lede{color:var(--muted); margin:0 0 28px; max-width:56ch}
+.tabs{display:flex; gap:4px; background:var(--sunk); padding:4px; border-radius:14px; margin-bottom:20px}
+.tab{
+  flex:1; border:0; background:transparent; color:var(--muted); font:inherit; font-weight:700;
+  padding:12px 8px; border-radius:10px; cursor:pointer; font-size:.95rem;
+}
+.tab[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 0 var(--line)}
+.tab:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.drop:focus-visible,select:focus-visible,input:focus-visible{
+  outline:3px solid var(--accent); outline-offset:2px;
+}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:clamp(16px,4vw,26px)}
+.panel[hidden]{display:none}
+.panel h2{font-family:"Bricolage Grotesque",system-ui,sans-serif; font-weight:700; font-size:1.35rem; margin:0 0 4px}
+.panel .hint{color:var(--muted); margin:0 0 18px; font-size:.95rem}
+.drop{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  border:2px dashed var(--line); border-radius:14px; padding:30px 16px; text-align:center;
+  cursor:pointer; background:var(--bg); transition:border-color .15s, background .15s;
+}
+.drop.over{border-color:var(--accent); background:var(--sunk)}
+.drop strong{font-size:1.05rem}
+.drop span{color:var(--muted); font-size:.9rem}
+.list{list-style:none; margin:16px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.item{
+  display:flex; align-items:center; gap:10px; padding:10px 10px 10px 14px;
+  background:var(--bg); border:1px solid var(--line); border-radius:10px;
+}
+.item .pos{font-family:"Bricolage Grotesque",sans-serif; font-weight:700; color:var(--muted); min-width:1.4em}
+.item .name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.item .size{color:var(--muted); font-size:.85rem; white-space:nowrap}
+.item.dragging{opacity:.4}
+.icon-btn{
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); width:34px; height:34px;
+  border-radius:8px; cursor:pointer; font-size:1rem; line-height:1; flex:none;
+}
+.icon-btn:disabled{opacity:.35; cursor:default}
+.opts{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-top:18px}
+.opts label{display:flex; flex-direction:column; gap:6px; font-weight:700; font-size:.9rem}
+.opts small{font-weight:400; color:var(--muted)}
+select,input[type=range]{font:inherit; width:100%}
+select{padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+input[type=range]{accent-color:var(--accent)}
+.seg{display:flex; gap:6px; flex-wrap:wrap; margin-top:18px}
+.seg label{flex:1; min-width:140px; cursor:pointer}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg .box{display:block; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--bg)}
+.seg .box b{display:block}
+.seg .box small{color:var(--muted)}
+.seg input:checked + .box{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.seg input:focus-visible + .box{outline:3px solid var(--accent); outline-offset:2px}
+.actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; align-items:center}
+.btn{
+  border:0; border-radius:10px; padding:13px 20px; font:inherit; font-weight:700; cursor:pointer;
+  background:var(--accent); color:var(--accent-ink);
+}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+.btn:disabled{opacity:.45; cursor:default}
+.status{color:var(--muted); font-size:.92rem}
+.status.err{color:var(--warn)}
+.note{font-size:.88rem; color:var(--muted); margin:14px 0 0}
+
+/* Le résultat : barres avant / après */
+.result{margin-top:22px; padding-top:20px; border-top:1px solid var(--line)}
+.result[hidden]{display:none}
+.bars{display:grid; grid-template-columns:auto 1fr auto; gap:8px 12px; align-items:center}
+.bars .lbl{font-size:.88rem; color:var(--muted)}
+.bars .track{height:16px; border-radius:4px; background:var(--sunk); overflow:hidden}
+.bars .fill{height:100%; border-radius:4px; width:0; transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bars .before{background:var(--bar-before)}
+.bars .after{background:var(--accent)}
+.bars .val{font-variant-numeric:tabular-nums; font-size:.9rem; text-align:right}
+.gain{
+  font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:clamp(2.2rem,8vw,3.4rem);
+  line-height:1; margin:0 0 14px; color:var(--gain); letter-spacing:-.02em;
+}
+.gain.neutral{color:var(--muted)}
+.gain small{font-size:.9rem; font-weight:500; color:var(--muted); letter-spacing:0; margin-left:8px}
+.thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:16px}
+.thumb{border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--bg); display:flex; flex-direction:column}
+.thumb img{width:100%; height:110px; object-fit:cover; display:block; background:var(--sunk)}
+.thumb .meta{padding:8px 10px; font-size:.8rem; display:flex; flex-direction:column; gap:2px}
+.thumb .meta .n{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700}
+.thumb .meta .s{color:var(--muted)}
+.thumb .meta .s b{color:var(--gain)}
+.thumb button{margin:0 10px 10px; padding:7px; font-size:.85rem}
+
+@media (max-width:560px){ .tabs{display:grid; grid-template-columns:1fr 1fr} }
+.rd-search{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; align-items:flex-end}
+.rd-search label{display:flex; flex-direction:column; gap:6px; font-weight:700; font-size:.9rem; flex:1; min-width:150px}
+.rd-search input[type=text], .rd-edit textarea, .rd-edit input[type=number]{
+  font:inherit; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%;
+}
+.rd-nav{display:flex; align-items:center; gap:8px; margin:18px 0 10px; flex-wrap:wrap}
+.rd-nav .pg{font-variant-numeric:tabular-nums; font-weight:700; min-width:7.5em; text-align:center}
+.rd-nav .spacer{flex:1}
+.stage{position:relative; width:100%; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; touch-action:none; user-select:none}
+.stage canvas{display:block; width:100%; height:auto}
+.overlay{position:absolute; inset:0; cursor:crosshair}
+.rbox{
+  position:absolute; display:flex; align-items:center; overflow:hidden; cursor:move;
+  font-family:Helvetica,Arial,sans-serif; line-height:1.15; white-space:pre-wrap; word-break:break-word;
+  outline:1px dashed rgba(47,91,234,.7);
+}
+.rbox.sel{outline:2px solid var(--accent); box-shadow:0 0 0 4px rgba(47,91,234,.25)}
+.rbox span{padding:0 calc(var(--k,1) * 2px); width:100%}
+.rbox .hdl{position:absolute; right:-1px; bottom:-1px; width:14px; height:14px; background:var(--accent); cursor:nwse-resize; border-radius:3px 0 0 0}
+.rbox.drawing{outline:2px dashed var(--accent); background:rgba(47,91,234,.15)}
+.rd-edit{margin-top:14px; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--bg); display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.rd-edit[hidden]{display:none}
+.rd-edit .full{grid-column:1/-1}
+.rd-edit label{display:flex; flex-direction:column; gap:6px; font-weight:700; font-size:.9rem}
+.rd-edit textarea{min-height:60px; resize:vertical}
+dialog{border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--ink); padding:22px; max-width:min(440px,92vw)}
+dialog::backdrop{background:rgba(10,15,25,.45)}
+dialog h2{font-family:"Bricolage Grotesque",system-ui,sans-serif; font-size:1.25rem; margin:0 0 6px}
+.pick-btns{display:flex; flex-direction:column; gap:8px; margin-top:12px}
+footer{margin-top:28px; color:var(--muted); font-size:.85rem}
+@media (prefers-reduced-motion: reduce){ .bars .fill{transition:none} .drop{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Atelier PDF&nbsp;&amp; images</h1>
+  <p class="lede">Fusionner, alléger, réduire. Tout se passe dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</p>
+
+  <div class="tabs" role="tablist" aria-label="Outils">
+    <button class="tab" role="tab" id="t-merge" aria-controls="p-merge" aria-selected="true">Fusionner</button>
+    <button class="tab" role="tab" id="t-cpdf" aria-controls="p-cpdf" aria-selected="false" tabindex="-1">Compresser un PDF</button>
+    <button class="tab" role="tab" id="t-img" aria-controls="p-img" aria-selected="false" tabindex="-1">Images</button>
+    <button class="tab" role="tab" id="t-red" aria-controls="p-red" aria-selected="false" tabindex="-1">Masquer &amp; réécrire</button>
+  </div>
+
+  <!-- FUSION -->
+  <section class="panel" id="p-merge" role="tabpanel" aria-labelledby="t-merge">
+    <h2>Fusionner des PDF</h2>
+    <p class="hint">Ajoute tes fichiers, mets-les dans l'ordre voulu (glisser ou flèches), puis fusionne.</p>
+    <div class="drop" tabindex="0" data-input="in-merge">
+      <strong>Dépose tes PDF ici</strong><span>ou clique pour les choisir</span>
+    </div>
+    <input type="file" id="in-merge" accept="application/pdf,.pdf" multiple hidden>
+    <ul class="list" id="merge-list"></ul>
+    <div class="actions">
+      <button class="btn" id="merge-go" disabled>Fusionner</button>
+      <button class="btn ghost" id="merge-clear" hidden>Tout retirer</button>
+      <span class="status" id="merge-status" aria-live="polite"></span>
+    </div>
+    <div class="result" id="merge-result" hidden></div>
+  </section>
+
+  <!-- COMPRESSION PDF -->
+  <section class="panel" id="p-cpdf" role="tabpanel" aria-labelledby="t-cpdf" hidden>
+    <h2>Compresser un PDF</h2>
+    <p class="hint">Idéal pour les scans et les PDF pleins de photos. Chaque page est convertie en image allégée.</p>
+    <div class="drop" tabindex="0" data-input="in-cpdf">
+      <strong>Dépose un PDF ici</strong><span>ou clique pour le choisir</span>
+    </div>
+    <input type="file" id="in-cpdf" accept="application/pdf,.pdf" hidden>
+    <ul class="list" id="cpdf-list"></ul>
+    <div class="seg" role="radiogroup" aria-label="Niveau de compression">
+      <label><input type="radio" name="lvl" value="light"><span class="box"><b>Légère</b><small>Très bonne qualité</small></span></label>
+      <label><input type="radio" name="lvl" value="medium" checked><span class="box"><b>Équilibrée</b><small>Bon compromis</small></span></label>
+      <label><input type="radio" name="lvl" value="strong"><span class="box"><b>Forte</b><small>Fichier le plus léger</small></span></label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="cpdf-go" disabled>Compresser</button>
+      <span class="status" id="cpdf-status" aria-live="polite"></span>
+    </div>
+    <p class="note">Après compression, le texte du PDF n'est plus sélectionnable (les pages deviennent des images).</p>
+    <div class="result" id="cpdf-result" hidden></div>
+  </section>
+
+  <!-- COMPRESSION IMAGES -->
+  <section class="panel" id="p-img" role="tabpanel" aria-labelledby="t-img" hidden>
+    <h2>Compresser des images</h2>
+    <p class="hint">JPEG, PNG, WebP. Tu peux en traiter plusieurs d'un coup.</p>
+    <div class="drop" tabindex="0" data-input="in-img">
+      <strong>Dépose tes images ici</strong><span>ou clique pour les choisir</span>
+    </div>
+    <input type="file" id="in-img" accept="image/jpeg,image/png,image/webp" multiple hidden>
+    <ul class="list" id="img-list"></ul>
+    <div class="opts">
+      <label>Qualité : <output id="q-out">75</output>&nbsp;%
+        <input type="range" id="img-q" min="30" max="95" value="75">
+        <small>Plus bas = plus léger</small>
+      </label>
+      <label>Largeur maximale
+        <select id="img-w">
+          <option value="0">Taille d'origine</option>
+          <option value="3840">3840 px (4K)</option>
+          <option value="2560">2560 px</option>
+          <option value="1920" selected>1920 px (Full HD)</option>
+          <option value="1280">1280 px</option>
+          <option value="800">800 px</option>
+        </select>
+      </label>
+      <label>Format de sortie
+        <select id="img-f">
+          <option value="image/jpeg" selected>JPEG</option>
+          <option value="image/webp">WebP (plus léger)</option>
+          <option value="keep">Garder le format</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="img-go" disabled>Compresser</button>
+      <button class="btn ghost" id="img-clear" hidden>Tout retirer</button>
+      <span class="status" id="img-status" aria-live="polite"></span>
+    </div>
+    <div class="result" id="img-result" hidden></div>
+  </section>
+
+  <!-- MASQUER & RÉÉCRIRE -->
+  <section class="panel" id="p-red" role="tabpanel" aria-labelledby="t-red" hidden>
+    <h2>Masquer et réécrire</h2>
+    <p class="hint">Recouvre des passages (« confidentiel », un nom, un montant…) puis écris ton propre texte par-dessus. Trace une zone à la souris ou au doigt, ou cherche un mot pour le masquer partout.</p>
+    <div class="drop" tabindex="0" data-input="in-red">
+      <strong>Dépose un PDF ici</strong><span>ou clique pour le choisir</span>
+    </div>
+    <input type="file" id="in-red" accept="application/pdf,.pdf" hidden>
+    <div id="rd-work" hidden>
+      <div class="rd-search">
+        <label>Mot à chercher<input type="text" id="rd-term" placeholder="ex. confidentiel"></label>
+        <label>Remplacer par <small style="font-weight:400;color:var(--muted)">(facultatif)</small><input type="text" id="rd-repl" placeholder="ex. public"></label>
+        <button class="btn ghost" id="rd-find">Masquer partout</button>
+      </div>
+      <div class="rd-nav">
+        <button class="icon-btn" id="rd-prev" aria-label="Page précédente">←</button>
+        <span class="pg" id="rd-pg">Page 1 / 1</span>
+        <button class="icon-btn" id="rd-next" aria-label="Page suivante">→</button>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="rd-clearpage" style="padding:8px 12px">Effacer les zones de la page</button>
+      </div>
+      <div class="stage" id="rd-stage"><canvas id="rd-canvas"></canvas><div class="overlay" id="rd-overlay"></div></div>
+      <div class="rd-edit" id="rd-edit" hidden>
+        <label class="full">Texte à écrire dans la zone
+          <textarea id="rd-text" placeholder="Laisse vide pour simplement masquer"></textarea></label>
+        <label>Fond
+          <select id="rd-fill"><option value="#ffffff">Blanc</option><option value="#000000">Noir</option><option value="#e6e6e6">Gris clair</option><option value="none">Transparent (texte seul)</option></select></label>
+        <label>Couleur du texte
+          <select id="rd-color"><option value="#000000">Noir</option><option value="#ffffff">Blanc</option><option value="#c00000">Rouge</option><option value="#1f3fa6">Bleu</option></select></label>
+        <label>Taille du texte (pt)
+          <input type="number" id="rd-size" min="4" max="96" step="1"></label>
+        <label>&nbsp;<button class="btn ghost" id="rd-del">Supprimer la zone</button></label>
+      </div>
+      <div class="actions">
+        <button class="btn" id="rd-go">Créer le PDF modifié</button>
+        <span class="status" id="rd-status" aria-live="polite"></span>
+      </div>
+      <p class="note">Le PDF final est « aplati » : chaque page devient une image, donc ce qui est masqué est réellement supprimé et ne peut pas être récupéré par copier-coller. En contrepartie, le texte n'est plus sélectionnable.</p>
+      <div class="result" id="rd-result" hidden></div>
+    </div>
+  </section>
+
+<dialog id="pick" aria-labelledby="pick-t">
+  <h2 id="pick-t">Que veux-tu faire avec ce PDF ?</h2>
+  <p id="pick-name" class="hint"></p>
+  <div class="pick-btns">
+    <button class="btn" value="t-red">Masquer &amp; réécrire</button>
+    <button class="btn ghost" value="t-cpdf">Compresser</button>
+    <button class="btn ghost" value="t-merge">Fusionner avec d'autres</button>
+  </div>
+</dialog>
+
+  <footer>Les fichiers restent sur ton appareil. Fermer la page efface tout.</footer>
+</div>
+
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/pdf.min.js"></script>
+<script src="lib/jszip.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
